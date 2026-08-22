@@ -1,0 +1,102 @@
+// schema.prisma
+// Prisma schema for GlobeTrotter relational database
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  password          String
+  name              String
+  photo             String
+  language          String          @default("en")
+  role              String          @default("User") // "User" | "Admin"
+  trips             Trip[]
+  savedDestinations UserSavedCity[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model City {
+  id           String          @id
+  name         String
+  country      String
+  costIndex    Int
+  popularity   Int
+  region       String
+  description  String
+  image        String
+  stops        Stop[]
+  savedByUsers UserSavedCity[]
+  activities   Activity[]
+}
+
+model UserSavedCity {
+  userId String
+  cityId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cityId])
+}
+
+model Activity {
+  id          String   @id
+  cityId      String?
+  name        String
+  cost        Float
+  category    String
+  duration    Float
+  description String
+  image       String
+  city        City?    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  startDate   String
+  endDate     String
+  description String?
+  coverPhoto  String
+  isPublic    Boolean  @default(false)
+  budgetLimit Float
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stops       Stop[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Stop {
+  id                String         @id @default(uuid())
+  tripId            String
+  cityId            String
+  arrivalDate       String
+  departureDate     String
+  accommodationCost Float
+  transportCost     Float
+  orderIndex        Int
+  trip              Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  city              City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  activities        StopActivity[]
+}
+
+model StopActivity {
+  id       String @id @default(uuid())
+  stopId   String
+  name     String
+  cost     Float
+  category String
+  duration Float
+  date     String
+  time     String
+  stop     Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
+}
